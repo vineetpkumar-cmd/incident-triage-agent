@@ -1,0 +1,43 @@
+  
+[
+  {
+    "number": "INC0010001",
+    "short_description": "Email service unavailable",
+    "description": "Employees cannot send or receive email.",
+    "priority": "P1",
+    "state": "New",
+    "assignment_group": "Messaging Support",
+    "engineering_required": true,
+    "sla_breached": false
+  },
+  {
+    "number": "INC0010002",
+    "short_description": "Payroll portal running slowly",
+    "description": "Several employees report slow payroll portal pages.",
+    "priority": "P2",
+    "state": "In Progress",
+    "assignment_group": "Business Applications",
+    "engineering_required": true,
+    "sla_breached": true
+  },
+  {
+    "number": "INC0010003",
+    "short_description": "New starter requires VPN access",
+    "description": "VPN access is required for a new employee.",
+    "priority": "P4",
+    "state": "New",
+    "assignment_group": "Access Management",
+    "engineering_required": false,
+    "sla_breached": false
+  },
+  {
+  "number": "INC0010004",
+  "short_description": "Shared mailbox email delivery failure",
+  "description": "Messages sent to shared mailboxes are not being delivered.",
+  "priority": "P2",
+  "state": "New",
+  "assignment_group": "Messaging Support",
+  "engineering_required": true,
+  "sla_breached": false
+}
+]

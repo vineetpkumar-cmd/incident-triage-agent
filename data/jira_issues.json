@@ -1,0 +1,42 @@
+[
+  {
+    "key": "ENG-101",
+    "project": "ENG",
+    "issue_type": "Story",
+    "summary": "Investigate payroll portal performance",
+    "description": "Investigate slow payroll portal pages reported by employees.",
+    "status": "In Progress",
+    "priority": "High",
+    "linked_incident": "INC0010002",
+    "comments": [
+      "Update from INC0010002: Several employees report slow payroll portal pages.",
+      "Update from INC0010002: Several employees report slow payroll portal pages.",
+      "Update from INC0010002: Several employees report slow payroll portal pages."
+    ]
+  },
+  {
+    "key": "OPS-201",
+    "project": "OPS",
+    "issue_type": "Task",
+    "summary": "Investigate recurring VPN access failures",
+    "description": "Review recurring VPN access incidents affecting new starters.",
+    "status": "Open",
+    "priority": "Medium",
+    "linked_incident": "INC0010010",
+    "comments": []
+  },
+  {
+    "key": "ENG-103",
+    "project": "ENG",
+    "issue_type": "Story",
+    "summary": "Investigate email service outage",
+    "description": "Investigate the outage linked to INC0010001.",
+    "status": "Open",
+    "priority": "Highest",
+    "linked_incident": "INC0010001",
+    "comments": [
+      "ServiceNow incident INC0010001 has been escalated.",
+      "Update from INC0010001: Employees cannot send or receive email."
+    ]
+  }
+]

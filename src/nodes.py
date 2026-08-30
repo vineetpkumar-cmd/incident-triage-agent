@@ -1,0 +1,279 @@
+import json
+from typing import Any
+
+from src.mcp_client import get_mcp_tools
+from src.state import IncidentState
+
+
+_TOOL_CACHE: dict[str, Any] | None = None
+
+
+async def get_tool(tool_name: str):
+    """Return one LangChain-compatible MCP tool."""
+    global _TOOL_CACHE
+
+    if _TOOL_CACHE is None:
+        tools = await get_mcp_tools()
+        _TOOL_CACHE = {
+            tool.name: tool
+            for tool in tools
+        }
+
+    return _TOOL_CACHE[tool_name]
+
+
+def normalize_result(result: Any) -> dict:
+    """Convert an MCP tool result into a dictionary."""
+    if isinstance(result, dict):
+        return result
+
+    if isinstance(result, str):
+        return json.loads(result)
+
+    if isinstance(result, list):
+        for item in result:
+            if isinstance(item, dict) and "text" in item:
+                return json.loads(item["text"])
+
+    raise ValueError(
+        f"Unsupported MCP result type: {type(result)}"
+    )
+
+
+async def call_tool(
+    tool_name: str,
+    arguments: dict,
+) -> dict:
+    """Invoke an MCP tool and normalize its response."""
+    tool = await get_tool(tool_name)
+    result = await tool.ainvoke(arguments)
+    return normalize_result(result)
+
+
+async def retrieve_incident(
+    state: IncidentState,
+) -> dict:
+    """Retrieve the primary ServiceNow incident."""
+    incident = await call_tool(
+        "get_incident",
+        {
+            "incident_number": state["incident_number"],
+        },
+    )
+
+    if "error" in incident:
+        return {
+            "stage": "failed",
+            "error": incident["error"],
+        }
+
+    return {
+        "incident": incident,
+        "stage": "incident_retrieved",
+    }
+
+
+async def enrich_incident(
+    state: IncidentState,
+) -> dict:
+    """Retrieve SLA and related incidents."""
+    incident_number = state["incident_number"]
+
+    sla = await call_tool(
+        "get_incident_sla",
+        {"incident_number": incident_number},
+    )
+    related = await call_tool(
+        "search_related_incidents",
+        {"incident_number": incident_number},
+    )
+
+    return {
+        "sla": sla,
+        "related_incidents": related,
+        "stage": "incident_enriched",
+    }
+
+
+async def search_jira(
+    state: IncidentState,
+) -> dict:
+    """Search Jira for an existing linked issue."""
+    jira_search = await call_tool(
+        "search_jira_issues",
+        {
+            "incident_number": state["incident_number"],
+        },
+    )
+
+    return {
+        "jira_search": jira_search,
+        "stage": "jira_searched",
+    }
+
+
+async def decide_action(
+    state: IncidentState,
+) -> dict:
+    """Choose whether to wait, notify, or escalate."""
+    incident = state["incident"]
+    sla = state["sla"]
+    jira_search = state["jira_search"]
+
+    priority = incident["priority"]
+    sla_breached = sla["sla_breached"]
+
+    if priority in {"P1", "P2"} or sla_breached:
+        decision = "escalate"
+    elif priority == "P3":
+        decision = "notify"
+    else:
+        decision = "wait"
+
+    if not incident["engineering_required"]:
+        jira_action = "none"
+    elif jira_search["total"] > 0:
+        jira_action = "update"
+    else:
+        jira_action = "create"
+
+    return {
+        "decision": decision,
+        "jira_action": jira_action,
+        "stage": "decision_complete",
+    }
+
+
+async def prepare_notification(
+    state: IncidentState,
+) -> dict:
+    """Prepare and store an Outlook email draft."""
+    incident = state["incident"]
+    jira_search = state["jira_search"]
+
+    jira_text = "No Jira issue currently exists."
+
+    if jira_search["total"] > 0:
+        jira_key = jira_search["issues"][0]["key"]
+        jira_text = f"Existing Jira issue: {jira_key}."
+
+    subject = (
+        f"{incident['priority']} incident "
+        f"{incident['number']}: "
+        f"{incident['short_description']}"
+    )
+
+    body = (
+        f"Incident: {incident['number']}\n"
+        f"Priority: {incident['priority']}\n"
+        f"Description: {incident['description']}\n"
+        f"Assignment group: "
+        f"{incident['assignment_group']}\n"
+        f"Decision: {state['decision']}\n"
+        f"{jira_text}"
+    )
+
+    draft_result = await call_tool(
+        "create_email_draft",
+        {
+            "recipients": [
+                "incident-management@example.com"
+            ],
+            "subject": subject,
+            "body": body,
+            "incident_number": incident["number"],
+        },
+    )
+
+    return {
+        "email_subject": subject,
+        "email_body": body,
+        "draft_result": draft_result,
+        "stage": "notification_drafted",
+    }
+
+
+async def execute_jira_action(
+    state: IncidentState,
+) -> dict:
+    """Create or update the relevant Jira issue."""
+    incident = state["incident"]
+    jira_action = state["jira_action"]
+
+    if jira_action == "none":
+        return {
+            "jira_result": {
+                "status": "not_required",
+            },
+            "stage": "jira_complete",
+        }
+
+    if jira_action == "update":
+        jira_key = state["jira_search"]["issues"][0][
+            "key"
+        ]
+
+        result = await call_tool(
+            "add_jira_comment",
+            {
+                "issue_key": jira_key,
+                "comment": (
+                    f"Update from {incident['number']}: "
+                    f"{incident['description']}"
+                ),
+                "incident_priority": incident["priority"],
+                "approved": state.get("approved", False),
+            },
+        )
+    else:
+        jira_priority = {
+            "P1": "Highest",
+            "P2": "High",
+            "P3": "Medium",
+            "P4": "Low",
+        }.get(incident["priority"], "Medium")
+
+        result = await call_tool(
+            "create_jira_issue",
+            {
+                "project": "ENG",
+                "issue_type": "Story",
+                "summary": (
+                    f"Investigate {incident['number']}: "
+                    f"{incident['short_description']}"
+                ),
+                "description": incident["description"],
+                "jira_priority": jira_priority,
+                "linked_incident": incident["number"],
+                "incident_priority": incident["priority"],
+                "approved": state.get("approved", False),
+            },
+        )
+
+    return {
+        "jira_result": result,
+        "stage": "jira_complete",
+    }
+
+
+async def send_notification(
+    state: IncidentState,
+) -> dict:
+    """Send the approved Outlook draft."""
+    draft_result = state["draft_result"]
+
+    result = await call_tool(
+        "send_email",
+        {
+            "draft_id": draft_result["draft"]["id"],
+            "incident_priority": state["incident"][
+                "priority"
+            ],
+            "approved": state.get("approved", False),
+        },
+    )
+
+    return {
+        "send_result": result,
+        "stage": "complete",
+    }

@@ -1,0 +1,107 @@
+{
+  "email_drafts": [
+    {
+      "id": "DRAFT-001",
+      "recipients": [
+        "incident-management@example.com"
+      ],
+      "subject": "P1 incident INC0010001",
+      "body": "The email service is unavailable. Engineering investigation ENG-103 is open.",
+      "incident_number": "INC0010001",
+      "sent": true
+    },
+    {
+      "id": "DRAFT-002",
+      "recipients": [
+        "incident-management@example.com"
+      ],
+      "subject": "P1 incident INC0010001: Email service unavailable",
+      "body": "Incident: INC0010001\nPriority: P1\nDescription: Employees cannot send or receive email.\nAssignment group: Messaging Support\nDecision: escalate\nExisting Jira issue: ENG-103.",
+      "incident_number": "INC0010001",
+      "sent": true
+    },
+    {
+      "id": "DRAFT-003",
+      "recipients": [
+        "incident-management@example.com"
+      ],
+      "subject": "P2 incident INC0010002: Payroll portal running slowly",
+      "body": "Incident: INC0010002\nPriority: P2\nDescription: Several employees report slow payroll portal pages.\nAssignment group: Business Applications\nDecision: escalate\nExisting Jira issue: ENG-101.",
+      "incident_number": "INC0010002",
+      "sent": true
+    },
+    {
+      "id": "DRAFT-004",
+      "recipients": [
+        "incident-management@example.com"
+      ],
+      "subject": "P2 incident INC0010002: Payroll portal running slowly",
+      "body": "Incident: INC0010002\nPriority: P2\nDescription: Several employees report slow payroll portal pages.\nAssignment group: Business Applications\nDecision: escalate\nExisting Jira issue: ENG-101.",
+      "incident_number": "INC0010002",
+      "sent": true
+    },
+    {
+      "id": "DRAFT-005",
+      "recipients": [
+        "incident-management@example.com"
+      ],
+      "subject": "P2 incident INC0010002: Payroll portal running slowly",
+      "body": "Incident: INC0010002\nPriority: P2\nDescription: Several employees report slow payroll portal pages.\nAssignment group: Business Applications\nDecision: escalate\nExisting Jira issue: ENG-101.",
+      "incident_number": "INC0010002",
+      "sent": true
+    }
+  ],
+  "sent_emails": [
+    {
+      "id": "DRAFT-001",
+      "recipients": [
+        "incident-management@example.com"
+      ],
+      "subject": "P1 incident INC0010001",
+      "body": "The email service is unavailable. Engineering investigation ENG-103 is open.",
+      "incident_number": "INC0010001",
+      "sent": true
+    },
+    {
+      "id": "DRAFT-002",
+      "recipients": [
+        "incident-management@example.com"
+      ],
+      "subject": "P1 incident INC0010001: Email service unavailable",
+      "body": "Incident: INC0010001\nPriority: P1\nDescription: Employees cannot send or receive email.\nAssignment group: Messaging Support\nDecision: escalate\nExisting Jira issue: ENG-103.",
+      "incident_number": "INC0010001",
+      "sent": true
+    },
+    {
+      "id": "DRAFT-003",
+      "recipients": [
+        "incident-management@example.com"
+      ],
+      "subject": "P2 incident INC0010002: Payroll portal running slowly",
+      "body": "Incident: INC0010002\nPriority: P2\nDescription: Several employees report slow payroll portal pages.\nAssignment group: Business Applications\nDecision: escalate\nExisting Jira issue: ENG-101.",
+      "incident_number": "INC0010002",
+      "sent": true
+    },
+    {
+      "id": "DRAFT-004",
+      "recipients": [
+        "incident-management@example.com"
+      ],
+      "subject": "P2 incident INC0010002: Payroll portal running slowly",
+      "body": "Incident: INC0010002\nPriority: P2\nDescription: Several employees report slow payroll portal pages.\nAssignment group: Business Applications\nDecision: escalate\nExisting Jira issue: ENG-101.",
+      "incident_number": "INC0010002",
+      "sent": true
+    },
+    {
+      "id": "DRAFT-005",
+      "recipients": [
+        "incident-management@example.com"
+      ],
+      "subject": "P2 incident INC0010002: Payroll portal running slowly",
+      "body": "Incident: INC0010002\nPriority: P2\nDescription: Several employees report slow payroll portal pages.\nAssignment group: Business Applications\nDecision: escalate\nExisting Jira issue: ENG-101.",
+      "incident_number": "INC0010002",
+      "sent": true
+    }
+  ],
+  "calendar_holds": []
+}
