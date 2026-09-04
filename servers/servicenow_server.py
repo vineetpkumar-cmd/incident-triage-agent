@@ -1,18 +1,19 @@
 
 import json
+import os
 import re
-from pathlib import Path
-import json
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 mcp = FastMCP("Mock ServiceNow")
 
 
-DATA_FILE = (
-    Path(__file__).resolve().parent.parent
-    / "data"
-    / "incidents.json"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DATA_FILE = Path(
+    os.getenv(
+        "SERVICENOW_DATA_FILE",
+        str(PROJECT_ROOT / "data" / "incidents.json"),
+    )
 )
 def extract_keywords(text: str) -> set[str]:
     """Extract meaningful lowercase words for matching."""

@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from pathlib import Path
 
@@ -7,10 +8,12 @@ from mcp.server.fastmcp import FastMCP
 mcp = FastMCP("Mock Jira")
 
 
-DATA_FILE = (
-    Path(__file__).resolve().parent.parent
-    / "data"
-    / "jira_issues.json"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DATA_FILE = Path(
+    os.getenv(
+        "JIRA_DATA_FILE",
+        str(PROJECT_ROOT / "data" / "jira_issues.json"),
+    )
 )
 
 

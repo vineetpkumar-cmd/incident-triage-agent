@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from pathlib import Path
 
@@ -6,10 +7,12 @@ from mcp.server.fastmcp import FastMCP
 mcp = FastMCP("Mock Outlook")
 
 
-DATA_FILE = (
-    Path(__file__).resolve().parent.parent
-    / "data"
-    / "notifications.json"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DATA_FILE = Path(
+    os.getenv(
+        "OUTLOOK_DATA_FILE",
+        str(PROJECT_ROOT / "data" / "notifications.json"),
+    )
 )
 
 ALLOWED_RECIPIENTS = {
