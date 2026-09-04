@@ -15,6 +15,8 @@ class IncidentState(TypedDict):
     jira_action: NotRequired[str]
     email_subject: NotRequired[str]
     email_body: NotRequired[str]
+    draft_source: NotRequired[str]
+    model_error: NotRequired[str | None]
 
     approved: NotRequired[bool]
     human_feedback: NotRequired[str]

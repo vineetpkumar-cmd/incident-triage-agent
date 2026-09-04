@@ -1,6 +1,7 @@
 import json
 from typing import Any
 
+from src.llm import generate_email_body
 from src.mcp_client import get_mcp_tools
 from src.state import IncidentState
 
@@ -163,7 +164,7 @@ async def prepare_notification(
         f"{incident['short_description']}"
     )
 
-    body = (
+    fallback_body = (
         f"Incident: {incident['number']}\n"
         f"Priority: {incident['priority']}\n"
         f"Description: {incident['description']}\n"
@@ -172,6 +173,20 @@ async def prepare_notification(
         f"Decision: {state['decision']}\n"
         f"{jira_text}"
     )
+
+    draft_source = "ollama"
+    model_error = None
+
+    try:
+        body = await generate_email_body(
+            incident=incident,
+            decision=state["decision"],
+            jira_text=jira_text,
+        )
+    except Exception as error:
+        body = fallback_body
+        draft_source = "template_fallback"
+        model_error = type(error).__name__
 
     draft_result = await call_tool(
         "create_email_draft",
@@ -188,6 +203,8 @@ async def prepare_notification(
     return {
         "email_subject": subject,
         "email_body": body,
+        "draft_source": draft_source,
+        "model_error": model_error,
         "draft_result": draft_result,
         "stage": "notification_drafted",
     }
