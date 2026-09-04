@@ -20,12 +20,16 @@ Evaluation covers the complete workflow and its intermediate trajectory:
 2. Retrieve SLA evidence and related incidents.
 3. Search Jira for linked engineering work.
 4. Decide whether to wait, notify, or escalate.
-5. Generate an Outlook notification using local Ollama.
+5. Generate an Outlook notification using local Ollama, falling back to a deterministic factual template if the local model fails.
 6. Pause for human approval when policy requires it.
 7. Create or update a fictional Jira issue when appropriate.
 8. Draft and send the approved fictional Outlook notification.
 
 Each case runs against isolated temporary copies of the mock JSON databases. Evaluation must not change the repository's original demo data.
+
+## Baseline Prerequisite
+
+Repository review found that `src/llm.py` defines the intended local Ollama notification generator, but `prepare_notification` currently constructs only a deterministic Python template and does not call it. Before freezing the Week 4 baseline, connect `generate_email_body()` to `prepare_notification`, retain the deterministic template as an explicit fallback for model failure, and add tests for both paths. The resulting tested version is the baseline agent because it restores the Week 3 architecture that the project claims to evaluate; no evaluation-driven improvements are applied until after baseline results exist.
 
 ## Metrics and Pass Bars
 
