@@ -112,6 +112,73 @@ async def search_jira(
         "stage": "jira_searched",
     }
 
+async def assess_evidence(
+    state: IncidentState,
+) -> dict:
+    """Check whether retrieved evidence is complete and valid."""
+    missing: list[str] = []
+
+    incident = state.get("incident")
+    incident_fields = {
+        "number",
+        "short_description",
+        "description",
+        "priority",
+        "state",
+        "assignment_group",
+        "engineering_required",
+    }
+
+    if not isinstance(incident, dict):
+        missing.append("incident")
+    else:
+        for field in sorted(incident_fields):
+            if field not in incident:
+                missing.append(f"incident.{field}")
+
+    sla = state.get("sla")
+
+    if not isinstance(sla, dict):
+        missing.append("sla")
+    elif "sla_breached" not in sla:
+        missing.append("sla.sla_breached")
+
+    related = state.get("related_incidents")
+
+    if not isinstance(related, dict):
+        missing.append("related_incidents")
+    else:
+        if not isinstance(
+            related.get("related_incidents"),
+            list,
+        ):
+            missing.append(
+                "related_incidents.related_incidents"
+            )
+
+        if not isinstance(related.get("total"), int):
+            missing.append("related_incidents.total")
+
+    jira_search = state.get("jira_search")
+
+    if not isinstance(jira_search, dict):
+        missing.append("jira_search")
+    else:
+        if not isinstance(jira_search.get("issues"), list):
+            missing.append("jira_search.issues")
+
+        if not isinstance(jira_search.get("total"), int):
+            missing.append("jira_search.total")
+
+    return {
+        "evidence_status": (
+            "sufficient"
+            if not missing
+            else "insufficient"
+        ),
+        "missing_evidence": missing,
+        "stage": "evidence_assessed",
+    }
 
 async def decide_action(
     state: IncidentState,

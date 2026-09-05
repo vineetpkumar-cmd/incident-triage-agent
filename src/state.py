@@ -10,6 +10,8 @@ class IncidentState(TypedDict):
     sla: NotRequired[dict[str, Any]]
     related_incidents: NotRequired[dict[str, Any]]
     jira_search: NotRequired[dict[str, Any]]
+    evidence_status: NotRequired[str]
+    missing_evidence: NotRequired[list[str]]
 
     decision: NotRequired[str]
     jira_action: NotRequired[str]
