@@ -208,3 +208,23 @@ The MVP succeeds when it retrieves an incident, checks SLA and related records, 
 - Graph state is kept in memory and is lost when the process stops.
 - Authentication, automatic polling, calendar bridge creation, persistent databases, and production deployment are outside the MVP scope.
 - The project is intended for local learning and demonstration.
+
+## Week 4: LangSmith Evaluation Results
+
+I evaluated the Incident Triage Agent using a 40-case golden dataset covering happy paths, edge cases, known failures, and adversarial scenarios. LangSmith captured the workflow steps, local Ollama calls, MCP tool calls, latency, token usage, and evaluator results.
+
+### Results
+
+| Metric | Baseline | Improved |
+|---|---:|---:|
+| Decision and tool accuracy | 75% | 100% |
+| Guardrail compliance | 95% | 100% |
+| Notification quality | 100% | 100% |
+| Task completion | 95% | 91% |
+| Trajectory correctness | 95% | 100% |
+| p50 latency | 3.81 seconds | 3.94 seconds |
+
+The improvements strengthened decision accuracy, safety, and workflow correctness. The remaining weakness is recovery from a simulated downstream email-tool failure.
+
+- [Detailed evaluation analysis](evaluation/post_improvement_analysis.md)
+- [LangSmith dataset and experiments](https://smith.langchain.com/o/2f9daf18-4b64-47b3-b671-7479b76f22e7/datasets/eedf6816-3b9f-4bb3-95c1-d0130f234938)
