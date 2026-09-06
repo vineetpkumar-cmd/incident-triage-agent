@@ -72,6 +72,30 @@ def display_workflow_state(result: dict) -> None:
             f"{incident['assignment_group']}"
         )
 
+    evidence_status = result.get("evidence_status")
+
+    if evidence_status:
+        st.subheader("Retrieval Evidence")
+
+        evidence_column, retry_column = st.columns(2)
+
+        evidence_column.metric(
+            "Evidence status",
+            evidence_status.title(),
+        )
+        retry_column.metric(
+            "Automatic retries",
+            result.get("retry_count", 0),
+        )
+
+        missing = result.get("missing_evidence", [])
+
+        if missing:
+            st.warning(
+                "Missing evidence: "
+                + ", ".join(missing)
+            )
+
     if result.get("decision"):
         st.subheader("Triage Decision")
 
@@ -103,6 +127,11 @@ def display_workflow_state(result: dict) -> None:
 
     if result.get("email_subject"):
         st.subheader("Outlook Draft")
+        st.write(
+            "**Draft source:** "
+            f"{result.get('draft_source', 'unknown')}"
+        )
+
         st.write(
             f"**Subject:** {result['email_subject']}"
         )
