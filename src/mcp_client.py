@@ -1,5 +1,9 @@
 import asyncio
 import sys
+
+import os
+
+
 from pathlib import Path
 
 from langchain_mcp_adapters.client import (
@@ -10,6 +14,16 @@ from langchain_mcp_adapters.client import (
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SERVERS_DIR = PROJECT_ROOT / "servers"
 
+def data_file_environment(
+    variable_name: str,
+) -> dict[str, str] | None:
+    """Forward an optional mock data-file override."""
+    value = os.getenv(variable_name)
+
+    if value is None:
+        return None
+
+    return {variable_name: value}
 
 def create_mcp_client() -> MultiServerMCPClient:
     """Configure clients for all three local MCP servers."""
@@ -21,6 +35,9 @@ def create_mcp_client() -> MultiServerMCPClient:
                 "args": [
                     str(SERVERS_DIR / "servicenow_server.py")
                 ],
+                "env": data_file_environment(
+                    "SERVICENOW_DATA_FILE"
+                ),
             },
             "jira": {
                 "transport": "stdio",
@@ -28,6 +45,9 @@ def create_mcp_client() -> MultiServerMCPClient:
                 "args": [
                     str(SERVERS_DIR / "jira_server.py")
                 ],
+                "env": data_file_environment(
+                    "JIRA_DATA_FILE"
+                ),
             },
             "outlook": {
                 "transport": "stdio",
@@ -35,6 +55,9 @@ def create_mcp_client() -> MultiServerMCPClient:
                 "args": [
                     str(SERVERS_DIR / "outlook_server.py")
                 ],
+                "env": data_file_environment(
+                    "OUTLOOK_DATA_FILE"
+                ),
             },
         }
     )

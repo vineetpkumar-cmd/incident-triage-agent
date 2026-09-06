@@ -21,7 +21,7 @@ from evaluation.telemetry import (
 )
 from src.workflow import workflow
 
-
+WORKFLOW_TIMEOUT_SECONDS = 120
 @contextmanager
 def isolated_data(inputs: dict):
     """Create temporary JSON stores for one case."""
@@ -63,9 +63,17 @@ def isolated_data(inputs: dict):
         )
 
         paths["OUTLOOK_DATA_FILE"].write_text(
-            "[]\n",
-            encoding="utf-8",
-        )
+            json.dumps(
+                {
+                  "email_drafts": [],
+                  "sent_emails": [],
+                 "calendar_holds": [],
+                 },
+                 indent=2,
+             )
+    + "\n",
+    encoding="utf-8",
+)
 
         for name, path in paths.items():
             os.environ[name] = str(path)
@@ -208,7 +216,7 @@ async def run_case(inputs: dict) -> dict:
                             },
                             config=config,
                         ),
-                        timeout=30,
+                        timeout=WORKFLOW_TIMEOUT_SECONDS,
                     )
 
                     interrupts = result.get(
@@ -246,7 +254,7 @@ async def run_case(inputs: dict) -> dict:
                                 ),
                                 config=config,
                             ),
-                            timeout=30,
+                            timeout=WORKFLOW_TIMEOUT_SECONDS,
                         )
 
                         interrupts = result.get(

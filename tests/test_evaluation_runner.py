@@ -1,5 +1,7 @@
 from pathlib import Path
 from types import SimpleNamespace
+import json
+import os
 
 import pytest
 
@@ -138,3 +140,24 @@ async def test_run_case_captures_failure(
     assert result["case_id"] == "HP-001"
     assert result["final_stage"] == "failed"
     assert "simulated failure" in result["error"]
+
+def test_local_workflow_timeout_allows_ollama():
+    assert (
+        runner.WORKFLOW_TIMEOUT_SECONDS
+        >= 60
+    )
+def test_isolated_data_creates_valid_outlook_store():
+    with runner.isolated_data(CASE_INPUTS):
+        path = Path(
+            os.environ["OUTLOOK_DATA_FILE"]
+        )
+
+        data = json.loads(
+            path.read_text(encoding="utf-8")
+        )
+
+    assert data == {
+        "email_drafts": [],
+        "sent_emails": [],
+        "calendar_holds": [],
+    }
