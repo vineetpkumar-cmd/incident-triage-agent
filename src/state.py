@@ -12,6 +12,8 @@ class IncidentState(TypedDict):
     jira_search: NotRequired[dict[str, Any]]
     evidence_status: NotRequired[str]
     missing_evidence: NotRequired[list[str]]
+    retrieval_review_action: NotRequired[str]
+    retrieval_feedback: NotRequired[str]
 
     decision: NotRequired[str]
     jira_action: NotRequired[str]
@@ -29,4 +31,4 @@ class IncidentState(TypedDict):
 
     stage: NotRequired[str]
     retry_count: NotRequired[int]
-    error: NotRequired[str]
+    error: NotRequired[str| None]

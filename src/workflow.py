@@ -3,6 +3,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
 
 from src.nodes import (
+    assess_evidence,
     decide_action,
     enrich_incident,
     execute_jira_action,
@@ -12,6 +13,99 @@ from src.nodes import (
     send_notification,
 )
 from src.state import IncidentState
+
+def prepare_retrieval_retry(
+    state: IncidentState,
+) -> dict:
+    """Clear old evidence before another retrieval attempt."""
+    return {
+        "retry_count": state.get("retry_count", 0) + 1,
+        "incident": {},
+        "sla": {},
+        "related_incidents": {},
+        "jira_search": {},
+        "evidence_status": "pending",
+        "missing_evidence": [],
+        "error": None,
+        "stage": "retrieval_retry_prepared",
+    }
+
+
+def route_after_evidence(
+    state: IncidentState,
+) -> str:
+    """Continue, retry once, or request human help."""
+    if state.get("evidence_status") == "sufficient":
+        return "continue"
+
+    if state.get("retry_count", 0) < 1:
+        return "retry"
+
+    return "human_review"
+
+
+def retrieval_human_review(
+    state: IncidentState,
+) -> dict:
+    """Pause when evidence remains incomplete."""
+    response = interrupt(
+        {
+            "review_type": "retrieval",
+            "message": (
+                "Retrieval remains incomplete after one retry."
+            ),
+            "incident_number": state["incident_number"],
+            "missing_evidence": state.get(
+                "missing_evidence",
+                [],
+            ),
+            "error": state.get("error"),
+            "allowed_actions": ["retry", "stop"],
+        }
+    )
+
+    if isinstance(response, dict):
+        retry = bool(response.get("retry", False))
+        feedback = str(response.get("feedback", ""))
+    else:
+        retry = False
+        feedback = ""
+
+    return {
+        "retrieval_review_action": (
+            "retry"
+            if retry
+            else "stop"
+        ),
+        "retrieval_feedback": feedback,
+        "stage": (
+            "retrieval_retry_requested"
+            if retry
+            else "retrieval_stopped"
+        ),
+    }
+
+def route_after_retrieval_review(
+    state: IncidentState,
+) -> str:
+    """Route according to the human's retrieval decision."""
+    if state.get("retrieval_review_action") == "retry":
+        return "retry"
+
+    return "stop"
+
+
+
+
+
+def route_after_retrieval(
+    state: IncidentState,
+) -> str:
+    """Continue retrieval or assess a failed result."""
+    if state.get("error"):
+        return "assess"
+
+    return "continue"
 
 
 def human_approval(
@@ -60,15 +154,6 @@ def human_approval(
     }
 
 
-def route_after_retrieval(
-    state: IncidentState,
-) -> str:
-    """Stop when the ServiceNow incident is missing."""
-    if state.get("error"):
-        return "stop"
-
-    return "continue"
-
 
 def route_after_decision(
     state: IncidentState,
@@ -107,6 +192,20 @@ def build_workflow():
         search_jira,
     )
     builder.add_node(
+        "assess_evidence",
+        assess_evidence,
+    )
+    builder.add_node(
+        "prepare_retrieval_retry",
+        prepare_retrieval_retry,
+    )
+    builder.add_node(
+        "retrieval_human_review",
+        retrieval_human_review,
+    )
+
+
+    builder.add_node(
         "decide_action",
         decide_action,
     )
@@ -137,9 +236,10 @@ def build_workflow():
         route_after_retrieval,
         {
             "continue": "enrich_incident",
-            "stop": END,
+            "assess": "assess_evidence",
         },
     )
+    
 
     builder.add_edge(
         "enrich_incident",
@@ -147,9 +247,30 @@ def build_workflow():
     )
     builder.add_edge(
         "search_jira",
-        "decide_action",
+        "assess_evidence",
+    )
+    builder.add_conditional_edges(
+        "assess_evidence",
+        route_after_evidence,
+        {
+            "continue": "decide_action",
+            "retry": "prepare_retrieval_retry",
+            "human_review": "retrieval_human_review",
+        },
     )
 
+    builder.add_edge(
+        "prepare_retrieval_retry",
+        "retrieve_incident",
+    )
+    builder.add_conditional_edges(
+        "retrieval_human_review",
+        route_after_retrieval_review,
+        {
+            "retry": "prepare_retrieval_retry",
+            "stop": END,
+        },
+    )
     builder.add_conditional_edges(
         "decide_action",
         route_after_decision,
