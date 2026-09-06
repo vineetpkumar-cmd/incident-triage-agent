@@ -180,7 +180,7 @@ pytest -q
 Current result:
 
 ```text
-42 passed
+62 passed
 ```
 
 To inspect one mock MCP server manually:
