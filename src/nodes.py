@@ -54,64 +54,113 @@ async def call_tool(
 async def retrieve_incident(
     state: IncidentState,
 ) -> dict:
-    """Retrieve the primary ServiceNow incident."""
-    incident = await call_tool(
-        "get_incident",
-        {
-            "incident_number": state["incident_number"],
-        },
-    )
+    """Retrieve the primary ServiceNow incident safely."""
+    try:
+        incident = await call_tool(
+            "get_incident",
+            {
+                "incident_number": state["incident_number"],
+            },
+        )
+    except Exception as error:
+        return {
+            "incident": {},
+            "stage": "incident_retrieval_failed",
+            "error": (
+                "get_incident failed: "
+                f"{type(error).__name__}"
+            ),
+        }
 
     if "error" in incident:
         return {
-            "stage": "failed",
-            "error": incident["error"],
+            "incident": {},
+            "stage": "incident_retrieval_failed",
+            "error": str(incident["error"]),
         }
 
     return {
         "incident": incident,
         "stage": "incident_retrieved",
+        "error": None,
     }
-
 
 async def enrich_incident(
     state: IncidentState,
 ) -> dict:
-    """Retrieve SLA and related incidents."""
+    """Retrieve SLA and related incidents safely."""
     incident_number = state["incident_number"]
+    errors: list[str] = []
 
-    sla = await call_tool(
-        "get_incident_sla",
-        {"incident_number": incident_number},
-    )
-    related = await call_tool(
-        "search_related_incidents",
-        {"incident_number": incident_number},
-    )
+    try:
+        sla = await call_tool(
+            "get_incident_sla",
+            {"incident_number": incident_number},
+        )
+    except Exception as error:
+        sla = {}
+        errors.append(
+            "get_incident_sla failed: "
+            f"{type(error).__name__}"
+        )
+
+    try:
+        related = await call_tool(
+            "search_related_incidents",
+            {"incident_number": incident_number},
+        )
+    except Exception as error:
+        related = {}
+        errors.append(
+            "search_related_incidents failed: "
+            f"{type(error).__name__}"
+        )
 
     return {
         "sla": sla,
         "related_incidents": related,
-        "stage": "incident_enriched",
+        "error": "; ".join(errors) if errors else None,
+        "stage": (
+            "incident_enrichment_failed"
+            if errors
+            else "incident_enriched"
+        ),
     }
-
 
 async def search_jira(
     state: IncidentState,
 ) -> dict:
-    """Search Jira for an existing linked issue."""
-    jira_search = await call_tool(
-        "search_jira_issues",
-        {
-            "incident_number": state["incident_number"],
-        },
-    )
+    """Search Jira safely for an existing linked issue."""
+    try:
+        jira_search = await call_tool(
+            "search_jira_issues",
+            {
+                "incident_number": state[
+                    "incident_number"
+                ],
+            },
+        )
+    except Exception as error:
+        return {
+            "jira_search": {},
+            "error": (
+                "search_jira_issues failed: "
+                f"{type(error).__name__}"
+            ),
+            "stage": "jira_search_failed",
+        }
+
+    if "error" in jira_search:
+        return {
+            "jira_search": {},
+            "error": str(jira_search["error"]),
+            "stage": "jira_search_failed",
+        }
 
     return {
         "jira_search": jira_search,
         "stage": "jira_searched",
     }
-
 async def assess_evidence(
     state: IncidentState,
 ) -> dict:
