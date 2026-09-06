@@ -1,8 +1,9 @@
-angchain-mcp-adapters==0.3.1
 langchain
 langgraph
-langchain-mcp-adapters
+langchain-mcp-adapters==0.3.1
 langchain-ollama
+langsmith>=0.3.13,<1
+mcp[cli]>=1.28,<2
 python-dotenv
 pytest
 pytest-asyncio
