@@ -4,6 +4,11 @@ import uuid
 
 from langgraph.types import Command
 
+from src.review import (
+    build_review_response,
+    is_retrieval_review,
+)
+
 from src.workflow import workflow
 
 
@@ -38,36 +43,45 @@ async def run_incident() -> None:
         config=config,
     )
 
-    interrupts = result.get("__interrupt__", [])
+        interrupts = result.get("__interrupt__", [])
 
-    if interrupts:
-        approval_request = interrupts[0].value
+    while interrupts:
+        review_request = interrupts[0].value
 
         print_json(
-            "Human approval required:",
-            approval_request,
+            "Human review required:",
+            review_request,
         )
 
-        answer = input(
-            "\nApprove these actions? (yes/no): "
-        ).strip().lower()
+        retrieval_review = is_retrieval_review(
+            review_request
+        )
 
-        approved = answer in {"yes", "y"}
+        question = (
+            "\nRetry retrieval? (yes/no): "
+            if retrieval_review
+            else "\nApprove these actions? (yes/no): "
+        )
+
+        answer = input(question).strip().lower()
+        accepted = answer in {"yes", "y"}
 
         feedback = input(
             "Optional feedback: "
         ).strip()
 
+        resume_payload = build_review_response(
+            review_request,
+            accepted=accepted,
+            feedback=feedback,
+        )
+
         result = await workflow.ainvoke(
-            Command(
-                resume={
-                    "approved": approved,
-                    "feedback": feedback,
-                }
-            ),
+            Command(resume=resume_payload),
             config=config,
         )
 
+        interrupts = result.get("__interrupt__", [])
     print_json(
         "Final workflow state:",
         result,

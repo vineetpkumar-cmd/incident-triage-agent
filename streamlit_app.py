@@ -4,6 +4,10 @@ import uuid
 
 import streamlit as st
 from langgraph.types import Command
+from src.review import (
+    build_review_response,
+    is_retrieval_review,
+)
 
 from src.workflow import workflow
 
@@ -203,7 +207,21 @@ if result:
 
     if interrupts:
         approval_request = interrupts[0].value
+        retrieval_review = is_retrieval_review(
+            approval_request
+        )
 
+        accept_label = (
+            "Retry retrieval"
+            if retrieval_review
+            else "Approve"
+        )
+
+        reject_label = (
+            "Stop"
+            if retrieval_review
+            else "Reject"
+        )
         st.warning("Human approval required")
 
         with st.expander(
@@ -219,7 +237,7 @@ if result:
         approve_column, reject_column = st.columns(2)
 
         if approve_column.button(
-            "Approve",
+            accept_label,
             type="primary",
             use_container_width=True,
         ):
@@ -229,10 +247,11 @@ if result:
                 ):
                     resumed_result = run_workflow(
                         Command(
-                            resume={
-                                "approved": True,
-                                "feedback": feedback,
-                            }
+                            resume=build_review_response(
+                                approval_request,
+                                accepted=True,
+                                feedback=feedback,
+                            )
                         ),
                         st.session_state[
                             "workflow_config"
@@ -254,10 +273,11 @@ if result:
             try:
                 resumed_result = run_workflow(
                     Command(
-                        resume={
-                            "approved": False,
-                            "feedback": feedback,
-                        }
+                        resume=build_review_response(
+                            approval_request,
+                            accepted=False,
+                            feedback=feedback,
+                        )
                     ),
                     st.session_state[
                         "workflow_config"

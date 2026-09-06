@@ -122,6 +122,7 @@ def human_approval(
 
     response = interrupt(
         {
+            "review_type": "action",
             "message": (
                 f"Approve {priority} incident actions?"
             ),
