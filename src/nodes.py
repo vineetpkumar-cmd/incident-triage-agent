@@ -4,6 +4,7 @@ from typing import Any
 from src.llm import generate_email_body
 from src.mcp_client import get_mcp_tools
 from src.state import IncidentState
+from evaluation.telemetry import record_tool_call
 
 
 _TOOL_CACHE: dict[str, Any] | None = None
@@ -47,6 +48,7 @@ async def call_tool(
 ) -> dict:
     """Invoke an MCP tool and normalize its response."""
     tool = await get_tool(tool_name)
+    record_tool_call(tool_name)
     result = await tool.ainvoke(arguments)
     return normalize_result(result)
 
