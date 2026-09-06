@@ -130,6 +130,14 @@ async def test_run_case_captures_failure(
             record_tool_call("get_incident")
             record_tool_call("create_email_draft")
             raise RuntimeError("simulated failure")
+        async def aget_state(self, config):
+            return SimpleNamespace(
+                values={
+                    "decision": "escalate",
+                    "jira_action": "create",
+                    "stage": "notification_preparation",
+                }
+            )
    
     monkeypatch.setattr(
         runner,
@@ -146,6 +154,10 @@ async def test_run_case_captures_failure(
         "get_incident",
         "create_email_draft",
     ]
+    assert result["decision"] == "escalate"
+    assert result["jira_action"] == "create"
+    assert result["approval_required"] is True
+    
 
 def test_local_workflow_timeout_allows_ollama():
     assert (
@@ -167,3 +179,4 @@ def test_isolated_data_creates_valid_outlook_store():
         "sent_emails": [],
         "calendar_holds": [],
     }
+    

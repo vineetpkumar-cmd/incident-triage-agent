@@ -199,7 +199,10 @@ async def run_case(inputs: dict) -> dict:
     }
 
     tool_calls: list[str] = []
-    approval_required = False
+    
+    approval_required = (
+        incident.get("priority") in {"P1", "P2"}
+    )
 
     try:
         with isolated_data(inputs):
@@ -314,16 +317,40 @@ async def run_case(inputs: dict) -> dict:
         if "captured" in locals():
             tool_calls = list(captured)
 
+        partial_state = {}
+
+        if hasattr(workflow, "aget_state"):
+            try:
+                snapshot = await workflow.aget_state(
+                    config
+                )
+                partial_state = dict(
+                    getattr(
+                        snapshot,
+                        "values",
+                        {},
+                    )
+                    or {}
+                )
+            except Exception:
+                partial_state = {}
+
         latency_ms = (
             time.perf_counter() - started
         ) * 1000
 
         return {
             "case_id": case_id,
-            "decision": None,
-            "jira_action": None,
+            "decision": partial_state.get(
+                "decision"
+            ),
+            "jira_action": partial_state.get(
+                "jira_action"
+            ),
             "approval_required": approval_required,
-            "approved": None,
+                        "approved": partial_state.get(
+                "approved"
+            ),
             "email_action": "none",
             "final_stage": "failed",
             "tool_sequence": tool_calls,
