@@ -1,3 +1,5 @@
+
+import src.workflow as workflow_module
 from src.workflow import (
     prepare_retrieval_retry,
     route_after_evidence,
@@ -76,3 +78,28 @@ def test_human_can_stop_retrieval():
     }
 
     assert route_after_retrieval_review(state) == "stop"
+
+def test_human_stop_sets_safe_terminal_decision(
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        workflow_module,
+        "interrupt",
+        lambda request: {
+            "retry": False,
+            "feedback": "Stop safely.",
+        },
+    )
+
+    result = workflow_module.retrieval_human_review(
+        {
+            "incident_number": "INC0099999",
+            "missing_evidence": ["incident"],
+            "retry_count": 1,
+        }
+    )
+
+    assert result["retrieval_review_action"] == "stop"
+    assert result["decision"] == "wait"
+    assert result["jira_action"] == "none"
+    assert result["stage"] == "retrieval_stopped"

@@ -71,7 +71,7 @@ def retrieval_human_review(
         retry = False
         feedback = ""
 
-    return {
+    result = {
         "retrieval_review_action": (
             "retry"
             if retry
@@ -84,6 +84,12 @@ def retrieval_human_review(
             else "retrieval_stopped"
         ),
     }
+
+    if not retry:
+        result["decision"] = "wait"
+        result["jira_action"] = "none"
+
+    return result
 
 def route_after_retrieval_review(
     state: IncidentState,
