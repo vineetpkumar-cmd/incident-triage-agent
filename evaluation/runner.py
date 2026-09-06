@@ -311,6 +311,9 @@ async def run_case(inputs: dict) -> dict:
         }
 
     except Exception as error:
+        if "captured" in locals():
+            tool_calls = list(captured)
+
         latency_ms = (
             time.perf_counter() - started
         ) * 1000

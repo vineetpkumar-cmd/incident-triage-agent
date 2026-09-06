@@ -127,8 +127,10 @@ async def test_run_case_captures_failure(
 ):
     class FailingWorkflow:
         async def ainvoke(self, value, config):
+            record_tool_call("get_incident")
+            record_tool_call("create_email_draft")
             raise RuntimeError("simulated failure")
-
+   
     monkeypatch.setattr(
         runner,
         "workflow",
@@ -140,6 +142,10 @@ async def test_run_case_captures_failure(
     assert result["case_id"] == "HP-001"
     assert result["final_stage"] == "failed"
     assert "simulated failure" in result["error"]
+    assert result["tool_sequence"] == [
+        "get_incident",
+        "create_email_draft",
+    ]
 
 def test_local_workflow_timeout_allows_ollama():
     assert (
