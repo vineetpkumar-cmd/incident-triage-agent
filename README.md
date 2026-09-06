@@ -1,3 +1,5 @@
+
+
 # Incident Triage Agent
 
 A fictional learning project that uses LangChain, LangGraph, local Ollama models, and mock MCP servers to triage ServiceNow incidents, coordinate Jira engineering work, and prepare Outlook notifications.
@@ -7,32 +9,91 @@ A fictional learning project that uses LangChain, LangGraph, local Ollama models
 ```mermaid
 flowchart TD
     User["User"] --> UI["Streamlit UI or CLI"]
-    UI --> Graph["LangGraph Incident Workflow"]
-    Graph --> Retrieve["Retrieve incident"]
-    Retrieve --> Enrich["Check SLA and related incidents"]
+    UI --> Retrieve["Retrieve ServiceNow incident"]
+    Retrieve -->|Found| Enrich["Retrieve SLA and related incidents"]
+    Retrieve -->|Missing or failed| Assess{"Is retrieval evidence sufficient?"}
     Enrich --> JiraSearch["Search linked Jira issues"]
-    JiraSearch --> Decide{"Decide action"}
-    Decide -->|Wait| Stop["No immediate action"]
-    Decide -->|Notify or escalate| Draft["Prepare notification"]
-    Draft --> Ollama["Ollama qwen3:4b"]
-    Ollama --> OutlookDraft["Create Outlook draft"]
-    OutlookDraft --> Approval{"Human approval required?"}
-    Approval -->|Rejected| Rejected["Stop without changes"]
-    Approval -->|Approved or low severity| JiraAction["Create Jira issue or add comment"]
-    JiraAction --> Send["Send approved Outlook email"]
+    JiraSearch --> Assess
+
+    Assess -->|Yes| Decide{"Wait, notify, or escalate?"}
+    Assess -->|No; first failure| Retry["Clear stale evidence and increment retry count"]
+    Retry --> Retrieve
+    Assess -->|No; retry already used| RetrievalReview{"Human retrieval review"}
+    RetrievalReview -->|Retry| Retry
+    RetrievalReview -->|Stop| SafeStop["Stop without Jira or Outlook actions"]
+
+    Decide -->|Wait| NoAction["No immediate action"]
+    Decide -->|Notify or escalate| Ollama["Ollama qwen3:4b drafts notification"]
+    Ollama -->|Available| OutlookDraft["Create mock Outlook draft"]
+    Ollama -->|Unavailable| Fallback["Use deterministic template"]
+    Fallback --> OutlookDraft
+
+    OutlookDraft --> Approval{"P1/P2 action approval"}
+    Approval -->|Rejected| Rejected["Stop without Jira change or email send"]
+    Approval -->|Approved or P3 automatic approval| JiraAction["Create Jira Story or add comment"]
+    JiraAction --> Send["Send approved mock Outlook email"]
     Send --> Complete["Workflow complete"]
+
     Retrieve -. MCP .-> ServiceNow["Mock ServiceNow MCP"]
     Enrich -. MCP .-> ServiceNow
     JiraSearch -. MCP .-> Jira["Mock Jira MCP"]
     JiraAction -. MCP .-> Jira
     OutlookDraft -. MCP .-> Outlook["Mock Outlook MCP"]
     Send -. MCP .-> Outlook
-    ServiceNow --> IncidentData[("incidents.json")]
-    Jira --> JiraData[("jira_issues.json")]
-    Outlook --> NotificationData[("notifications.json")]
 ```
 
 LangGraph owns the control flow and state. LangChain MCP adapters expose the three mock systems as tools. Ollama drafts notification text, while deterministic Python rules enforce triage, validation, duplicate prevention, and approval controls.
+## Agentic Retrieval Decision Loop
+
+The workflow does not assume that one retrieval attempt is sufficient. After collecting ServiceNow and Jira evidence, the `assess_evidence` node checks that the incident fields, SLA result, related-incident result, and Jira search result are complete and structurally valid.
+
+If evidence is incomplete, LangGraph conditionally loops back and retries retrieval once. If the second attempt is still incomplete, the workflow pauses for human review and performs no Jira or Outlook actions. This observe-decide-retry-or-escalate behaviour provides the agentic retrieval loop while deterministic validation keeps operational decisions safe and testable.
+## Full Execution Path
+
+A successful high-severity execution follows this path:
+
+```text
+User submits incident
+→ retrieve_incident
+→ enrich_incident
+→ search_jira
+→ assess_evidence
+→ decide_action
+→ prepare_notification
+→ Ollama generates the draft
+→ create_email_draft
+→ human_approval interrupt
+→ execute_jira_action
+→ send_notification
+→ complete
+```
+
+An incomplete retrieval follows this path:
+
+```text
+retrieve
+→ assess evidence as insufficient
+→ clear stale evidence
+→ retry retrieval once
+→ assess evidence again
+→ retrieval_human_review interrupt
+→ human retries or stops safely
+```
+
+## Human Review Decisions
+
+Human review is required at two different stages:
+
+1. **Retrieval review:** If required evidence remains incomplete after one automatic retry, the graph pauses. A human can request another retry or stop the workflow. No Jira issue, Jira comment, Outlook draft, or email send is performed while retrieval remains unresolved.
+2. **Action approval:** P1 and P2 incidents pause after the proposed notification has been prepared. A human reviews the incident, Jira action, subject, and body before Jira changes or email sending are allowed.
+
+P3 notifications may proceed automatically because the project uses fictional data and the mock tools independently enforce recipient allowlists, Jira project and issue-type allowlists, duplicate prevention, and email-send protection. P4 incidents stop at the `wait` decision.
+
+## Ollama Drafting
+
+The `prepare_notification` LangGraph node calls the local Ollama model through `generate_email_body()`. The resulting state records `draft_source: ollama`, which demonstrates that the model was part of the execution path.
+
+If Ollama is unavailable, the node records `draft_source: template_fallback` and uses a deterministic notification template. Ollama drafts text only; deterministic Python rules control evidence validation, triage, permissions, and approval.
 
 ## Workflow
 
@@ -119,7 +180,7 @@ pytest -q
 Current result:
 
 ```text
-18 passed
+42 passed
 ```
 
 To inspect one mock MCP server manually:
