@@ -6,6 +6,10 @@ Cases: 40
 
 ## Baseline metrics
 
+These metrics were regenerated from the 40 case-level outputs in the saved
+LangSmith experiment. The score count is shown because notification quality is
+not applicable to cases that intentionally produce no notification.
+
 | Metric | Result |
 |---|---:|
 | Decision and tool accuracy | 0.875 |
@@ -16,6 +20,8 @@ Cases: 40
 | p50 latency | 3.81 seconds |
 | p95 latency | 4.46 seconds |
 | Total tokens | 5,562 |
+
+Canonical source: [`canonical_comparison.json`](canonical_comparison.json)
 
 ## Failure analysis
 

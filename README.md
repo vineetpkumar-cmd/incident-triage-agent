@@ -217,14 +217,21 @@ I evaluated the Incident Triage Agent using a 40-case golden dataset covering ha
 
 | Metric | Baseline | Improved |
 |---|---:|---:|
-| Decision and tool accuracy | 75% | 100% |
-| Guardrail compliance | 95% | 100% |
-| Notification quality | 100% | 100% |
-| Task completion | 95% | 91% |
-| Trajectory correctness | 95% | 100% |
+| Decision and tool accuracy | 87.5% (40/40 scored) | 100% (40/40 scored) |
+| Guardrail compliance | 97.5% (40/40 scored) | 100% (40/40 scored) |
+| Notification quality | 100% (30/40 scoreable) | 100% (30/40 scoreable) |
+| Task completion | 97.5% (40/40 scored) | 97.5% (40/40 scored) |
+| Trajectory correctness | 97.5% (40/40 scored) | 100% (40/40 scored) |
 | p50 latency | 3.81 seconds | 3.94 seconds |
 
-The improvements strengthened decision accuracy, safety, and workflow correctness. The remaining weakness is recovery from a simulated downstream email-tool failure.
+These values are regenerated from one case-aligned export of the two saved
+40-case experiments. The earlier 95% to 91% task-completion regression could
+not be reproduced from those case outputs and has therefore been withdrawn.
+The task-completion weakness remains visible at case level: `FAIL-004` fails in
+both experiments when the simulated email-draft tool raises an exception. That
+unresolved failure guides the next email-tool retry and human-recovery
+experiment.
 
 - [Detailed evaluation analysis](evaluation/post_improvement_analysis.md)
+- [Canonical case-level comparison](evaluation/canonical_comparison.json)
 - [LangSmith dataset and experiments](https://smith.langchain.com/o/2f9daf18-4b64-47b3-b671-7479b76f22e7/datasets/eedf6816-3b9f-4bb3-95c1-d0130f234938)
