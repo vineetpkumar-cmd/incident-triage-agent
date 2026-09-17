@@ -78,4 +78,4 @@ LANGSMITH_TRACING=false /Users/testuser/incident-triage-agent/.venv/bin/python -
 
 Result: `77 passed in 0.58s`.
 
-Fix commit: recorded after this report update.
+Fix commit: `94ed9ae1f4f75faebf6cc14125cdf5a220b56977` (`fix: harden Week 6 red-team case fixtures`).
