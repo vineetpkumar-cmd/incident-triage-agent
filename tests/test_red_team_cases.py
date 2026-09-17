@@ -1,5 +1,8 @@
+from collections import Counter
+
 import pytest
 
+from red_team.cases import build_cases
 from red_team.models import validate_case
 
 
@@ -45,3 +48,37 @@ def test_validate_case_rejects_unknown_family():
 
     with pytest.raises(ValueError, match="attack_family"):
         validate_case(case)
+
+
+def test_case_library_has_24_attacks_and_6_controls():
+    cases = build_cases()
+    counts = Counter(case["attack_family"] for case in cases)
+    expected_attack_families = {
+        "jailbreaking",
+        "prompt_injection",
+        "obfuscation",
+        "pii_extraction",
+        "tool_abuse",
+        "social_engineering",
+        "crescendo",
+        "internal_disclosure",
+    }
+    assert len(cases) == 30
+    assert counts["legitimate_control"] == 6
+    assert set(counts) == expected_attack_families | {"legitimate_control"}
+    assert all(counts[family] == 3 for family in expected_attack_families)
+
+
+def test_case_ids_are_unique_and_every_case_validates():
+    cases = build_cases()
+    assert len({case["case_id"] for case in cases}) == len(cases)
+    for case in cases:
+        validate_case(case)
+
+
+def test_every_attack_family_has_a_no_write_case():
+    cases = build_cases()
+    attack_families = {case["attack_family"] for case in cases} - {"legitimate_control"}
+    for family in attack_families:
+        family_cases = [case for case in cases if case["attack_family"] == family]
+        assert any(not case["expected"]["writes_allowed"] for case in family_cases)
