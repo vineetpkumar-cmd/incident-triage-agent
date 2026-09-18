@@ -1,5 +1,7 @@
 # Week 6 Incident Triage Red-Team Findings
 
+![Week 6 red-team architecture](week6-red-team-architecture.svg)
+
 ## Executive summary
 
 This Path B project red-teams the existing Incident Triage Agent using 24 fictional attacks and six legitimate-use controls. Baseline and defended modes ran the same 30 case IDs in isolated temporary ServiceNow, Jira, and Outlook stores. No production data or public LLM endpoint was used.

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="540" viewBox="0 0 1200 540" role="img" aria-labelledby="title desc">
+  <title id="title">Week 6 Incident Triage red-team architecture</title>
+  <desc id="desc">The same fictional cases flow through baseline and defended paths, then into evidence capture and comparison.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#334155"/></marker>
+    <style>.box{rx:14;stroke-width:2}.t{font:600 18px Arial;fill:#0f172a}.s{font:14px Arial;fill:#334155}.a{stroke:#334155;stroke-width:2;fill:none;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect width="1200" height="540" fill="#f8fafc"/>
+  <text x="600" y="38" text-anchor="middle" class="t" font-size="24">Incident Triage Agent — Week 6 Red-Team Evaluation</text>
+  <rect class="box" x="40" y="190" width="200" height="120" fill="#dbeafe" stroke="#2563eb"/>
+  <text x="140" y="225" text-anchor="middle" class="t">30 fictional cases</text><text x="140" y="253" text-anchor="middle" class="s">24 attacks · 8 families</text><text x="140" y="276" text-anchor="middle" class="s">6 legitimate controls</text>
+  <path class="a" d="M240 225 H330"/><path class="a" d="M240 280 H330"/>
+  <rect class="box" x="330" y="90" width="250" height="130" fill="#fee2e2" stroke="#dc2626"/>
+  <text x="455" y="127" text-anchor="middle" class="t">Baseline path</text><text x="455" y="157" text-anchor="middle" class="s">Original LangGraph workflow</text><text x="455" y="182" text-anchor="middle" class="s">Mock ServiceNow · Jira · Outlook</text>
+  <rect class="box" x="330" y="285" width="250" height="170" fill="#dcfce7" stroke="#16a34a"/>
+  <text x="455" y="320" text-anchor="middle" class="t">Defended path</text><text x="455" y="350" text-anchor="middle" class="s">Input guardrail</text><text x="455" y="375" text-anchor="middle" class="s">Deterministic tool authorization</text><text x="455" y="400" text-anchor="middle" class="s">Output guardrail</text><text x="455" y="425" text-anchor="middle" class="s">Same mock integrations</text>
+  <path class="a" d="M580 155 H690"/><path class="a" d="M580 370 H690"/>
+  <rect class="box" x="690" y="185" width="220" height="170" fill="#fef3c7" stroke="#d97706"/>
+  <text x="800" y="220" text-anchor="middle" class="t">Evidence capture</text><text x="800" y="250" text-anchor="middle" class="s">Prompt and response</text><text x="800" y="275" text-anchor="middle" class="s">Tool calls and arguments</text><text x="800" y="300" text-anchor="middle" class="s">Mutations and guardrail events</text><text x="800" y="325" text-anchor="middle" class="s">PASS · WARN · FAIL reasons</text>
+  <path class="a" d="M910 270 H980"/>
+  <rect class="box" x="980" y="205" width="180" height="130" fill="#ede9fe" stroke="#7c3aed"/>
+  <text x="1070" y="240" text-anchor="middle" class="t">Comparison</text><text x="1070" y="270" text-anchor="middle" class="s">Aligned case IDs</text><text x="1070" y="295" text-anchor="middle" class="s">Safety and utility</text><text x="1070" y="318" text-anchor="middle" class="s">Report evidence</text>
+  <text x="600" y="510" text-anchor="middle" class="s">Every run uses temporary fictional stores and a unique LangGraph thread ID.</text>
+</svg>

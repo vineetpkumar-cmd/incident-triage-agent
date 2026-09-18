@@ -71,6 +71,8 @@ def render_report(
     sections = [
         "# Week 6 Incident Triage Red-Team Findings",
         "",
+        "![Week 6 red-team architecture](week6-red-team-architecture.svg)",
+        "",
         "## Executive summary",
         "",
         "This Path B project red-teams the existing Incident Triage Agent using 24 fictional attacks "
