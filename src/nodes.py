@@ -5,9 +5,35 @@ from src.llm import generate_email_body
 from src.mcp_client import get_mcp_tools
 from src.state import IncidentState
 from evaluation.telemetry import record_tool_call
+from red_team.authorization import authorize_tool_call
 
 
 _TOOL_CACHE: dict[str, Any] | None = None
+
+
+def authorization_block(
+    state: IncidentState,
+    tool_name: str,
+    arguments: dict[str, Any],
+) -> dict | None:
+    """Return a block state for denied defended calls; baseline bypasses this layer."""
+    if not state.get("defense_mode", False):
+        return None
+    decision = authorize_tool_call(tool_name, arguments, state)
+    if decision["allowed"]:
+        return None
+    return {
+        "decision": "wait",
+        "jira_action": "none",
+        "stage": "tool_authorization_blocked",
+        "error": "Tool authorization denied: " + ", ".join(decision["reasons"]),
+        "guardrail_events": state.get("guardrail_events", []) + [{
+            "layer": "tool_authorization",
+            "action": "block",
+            "reasons": decision["reasons"],
+            "tool": tool_name,
+        }],
+    }
 
 
 async def get_tool(tool_name: str):
@@ -306,17 +332,18 @@ async def prepare_notification(
         draft_source = "template_fallback"
         model_error = type(error).__name__
 
-    draft_result = await call_tool(
-        "create_email_draft",
-        {
+    draft_arguments = {
             "recipients": [
                 "incident-management@example.com"
             ],
             "subject": subject,
             "body": body,
             "incident_number": incident["number"],
-        },
-    )
+        }
+    blocked = authorization_block(state, "create_email_draft", draft_arguments)
+    if blocked:
+        return blocked
+    draft_result = await call_tool("create_email_draft", draft_arguments)
 
     return {
         "email_subject": subject,
@@ -348,9 +375,7 @@ async def execute_jira_action(
             "key"
         ]
 
-        result = await call_tool(
-            "add_jira_comment",
-            {
+        jira_arguments = {
                 "issue_key": jira_key,
                 "comment": (
                     f"Update from {incident['number']}: "
@@ -358,8 +383,11 @@ async def execute_jira_action(
                 ),
                 "incident_priority": incident["priority"],
                 "approved": state.get("approved", False),
-            },
-        )
+            }
+        blocked = authorization_block(state, "add_jira_comment", jira_arguments)
+        if blocked:
+            return blocked
+        result = await call_tool("add_jira_comment", jira_arguments)
     else:
         jira_priority = {
             "P1": "Highest",
@@ -368,9 +396,7 @@ async def execute_jira_action(
             "P4": "Low",
         }.get(incident["priority"], "Medium")
 
-        result = await call_tool(
-            "create_jira_issue",
-            {
+        jira_arguments = {
                 "project": "ENG",
                 "issue_type": "Story",
                 "summary": (
@@ -382,8 +408,11 @@ async def execute_jira_action(
                 "linked_incident": incident["number"],
                 "incident_priority": incident["priority"],
                 "approved": state.get("approved", False),
-            },
-        )
+            }
+        blocked = authorization_block(state, "create_jira_issue", jira_arguments)
+        if blocked:
+            return blocked
+        result = await call_tool("create_jira_issue", jira_arguments)
 
     return {
         "jira_result": result,
@@ -397,16 +426,17 @@ async def send_notification(
     """Send the approved Outlook draft."""
     draft_result = state["draft_result"]
 
-    result = await call_tool(
-        "send_email",
-        {
+    send_arguments = {
             "draft_id": draft_result["draft"]["id"],
             "incident_priority": state["incident"][
                 "priority"
             ],
             "approved": state.get("approved", False),
-        },
-    )
+        }
+    blocked = authorization_block(state, "send_email", send_arguments)
+    if blocked:
+        return blocked
+    result = await call_tool("send_email", send_arguments)
 
     return {
         "send_result": result,

@@ -22,6 +22,13 @@ def route_after_input_guardrail(state: IncidentState) -> str:
         return "stop"
     return "continue"
 
+
+def route_after_authorized_node(state: IncidentState) -> str:
+    """Stop a defended workflow immediately after an authorization denial."""
+    if state.get("stage") == "tool_authorization_blocked":
+        return "stop"
+    return "continue"
+
 def prepare_retrieval_retry(
     state: IncidentState,
 ) -> dict:
@@ -300,9 +307,10 @@ def build_workflow():
         },
     )
 
-    builder.add_edge(
+    builder.add_conditional_edges(
         "prepare_notification",
-        "human_approval",
+        route_after_authorized_node,
+        {"continue": "human_approval", "stop": "output_guardrail"},
     )
 
     builder.add_conditional_edges(
@@ -314,9 +322,10 @@ def build_workflow():
         },
     )
 
-    builder.add_edge(
+    builder.add_conditional_edges(
         "execute_jira_action",
-        "send_notification",
+        route_after_authorized_node,
+        {"continue": "send_notification", "stop": "output_guardrail"},
     )
     builder.add_edge("send_notification", "output_guardrail")
     builder.add_edge("output_guardrail", END)
