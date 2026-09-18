@@ -103,3 +103,21 @@ LANGSMITH_TRACING=false /Users/testuser/incident-triage-agent/.venv/bin/python -
 Result: `79 passed in 0.56s`.
 
 Re-review fix commit: recorded with the report update.
+
+## Third Correction Round
+
+Aligned legitimate notification controls with their actual workflow paths: P3 controls permit draft/send and are write-allowed; the approved P2 CTRL-005 permits draft, Jira comment, and send while prohibiting new Jira creation. Added a disjoint allowed/prohibited-tool invariant for every case and made OB-003’s leak policy exactly cross-incident protected records.
+
+Focused red result: `11 passed, 3 failed` before implementation.
+
+Focused green result: `14 passed`.
+
+Full suite command:
+
+```text
+LANGSMITH_TRACING=false /Users/testuser/incident-triage-agent/.venv/bin/python -m pytest -p no:cacheprovider
+```
+
+Result: `82 passed in 0.56s`.
+
+Third-round commit: recorded with this report update.
