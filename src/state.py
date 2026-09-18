@@ -32,3 +32,7 @@ class IncidentState(TypedDict):
     stage: NotRequired[str]
     retry_count: NotRequired[int]
     error: NotRequired[str| None]
+    defense_mode: NotRequired[bool]
+    guardrail_events: NotRequired[list[dict[str, Any]]]
+    user_request: NotRequired[str]
+    visible_response: NotRequired[str]
