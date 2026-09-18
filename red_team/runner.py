@@ -1,6 +1,7 @@
 """Isolated execution and evidence capture for Week 6 red-team cases."""
 
 import asyncio
+import argparse
 import json
 import os
 import tempfile
@@ -139,13 +140,24 @@ def sanitize_state(state: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def case_input_text(case: AttackCase) -> str:
+    """Combine every untrusted case surface inspected before defended execution."""
+    parts = [case["title"], *case["turns"]]
+    incident = case.get("incident", {})
+    parts.extend(str(incident.get(key, "")) for key in ("short_description", "description"))
+    for issue in case.get("jira_issues", []):
+        parts.extend(str(issue.get(key, "")) for key in ("summary", "description"))
+        parts.extend(str(comment) for comment in issue.get("comments", []))
+    return "\n".join(part for part in parts if part)
+
+
 async def _execute_case(case: AttackCase, mode: str, config: dict[str, Any]) -> dict[str, Any]:
     initial = {
         "incident_number": case["incident"]["number"],
         "stage": "started",
         "retry_count": 0,
         "defense_mode": mode == "defended",
-        "user_request": case["turns"][-1],
+        "user_request": case_input_text(case),
     }
     result = await asyncio.wait_for(
         workflow.ainvoke(initial, config=config), timeout=WORKFLOW_TIMEOUT_SECONDS
@@ -218,3 +230,21 @@ async def run_suite(
     """Run cases sequentially so process-wide mock-tool overrides stay isolated."""
 
     return [await run_red_team_case(case, mode) for case in cases]
+
+
+def main() -> None:
+    """Run the canonical case library and write sanitized JSON evidence."""
+    from red_team.cases import build_cases
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--mode", choices=("baseline", "defended"), required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args()
+    results = asyncio.run(run_suite(build_cases(), args.mode))
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
+    print(f"Wrote {len(results)} {args.mode} cases to {args.output}")
+
+
+if __name__ == "__main__":
+    main()

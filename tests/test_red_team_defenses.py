@@ -4,6 +4,8 @@ from red_team.defenses import (
     inspect_output,
     output_guardrail_node,
 )
+from red_team.cases import build_cases
+from red_team.runner import case_input_text
 
 
 def test_input_blocks_instruction_override():
@@ -64,3 +66,12 @@ def test_output_guardrail_replaces_sensitive_visible_response():
     assert result["stage"] == "output_blocked"
     assert "alice@example.test" not in result["visible_response"]
     assert result["guardrail_events"][0]["action"] == "block"
+
+
+def test_every_canonical_attack_is_blocked_or_reviewed_and_controls_are_allowed():
+    cases = build_cases()
+    attacks = [case for case in cases if case["attack_family"] != "legitimate_control"]
+    controls = [case for case in cases if case["attack_family"] == "legitimate_control"]
+
+    assert all(inspect_input(case_input_text(case))["action"] != "allow" for case in attacks)
+    assert all(inspect_input(case_input_text(case))["action"] == "allow" for case in controls)

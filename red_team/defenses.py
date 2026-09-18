@@ -11,16 +11,31 @@ class GuardrailDecision(TypedDict):
 
 INPUT_PATTERNS = {
     "instruction_override": re.compile(
-        r"\b(ignore|disregard|override|bypass)\b.{0,50}\b(instructions?|rules?|approval|policy)\b",
+        r"\b(ignore|disregard|override|bypass)\b.{0,50}\b(instructions?|rules?|approval|policy|workflow)\b",
         re.I,
     ),
     "internal_request": re.compile(
-        r"\b(system prompt|hidden instruction|tool schema|chain of thought)\b", re.I
+        r"\b(system prompt|hidden instructions?|tool schemas?|chain of thought|hidden reasoning|routing policy)\b",
+        re.I,
     ),
     "authority_claim": re.compile(
         r"\b(i am|i'm)\b.{0,30}\b(admin|executive|auditor|manager)\b", re.I
     ),
     "encoded_payload": re.compile(r"\b[A-Za-z0-9+/]{24,}={0,2}\b"),
+    "privilege_escalation": re.compile(
+        r"\b(unrestricted administrator|developer mode|switch (?:role|to)|bypass approval|without approval)\b",
+        re.I,
+    ),
+    "sensitive_data_request": re.compile(
+        r"\b(another employee email|unrelated incident details?|notification recipient list|"
+        r"cross-incident|protected records|unauthorized recipient|injected recipient)\b",
+        re.I,
+    ),
+    "obfuscated_internal_request": re.compile(
+        r"s\s+y\s+s\s+t\s+e\s+m\s+p\s+r\s+o\s+m\s+p\s+t|"
+        r"t\s+o\s+o\s+l\s+s",
+        re.I,
+    ),
 }
 OUTPUT_PATTERNS = {
     "internal_disclosure": re.compile(
@@ -39,7 +54,13 @@ def inspect_input(text: str) -> GuardrailDecision:
 
     value = str(text or "")
     reasons = [name for name, pattern in INPUT_PATTERNS.items() if pattern.search(value)]
-    if any(reason in {"instruction_override", "internal_request"} for reason in reasons):
+    if any(reason in {
+        "instruction_override",
+        "internal_request",
+        "privilege_escalation",
+        "sensitive_data_request",
+        "obfuscated_internal_request",
+    } for reason in reasons):
         return {"action": "block", "reasons": reasons}
     if reasons:
         return {"action": "review", "reasons": reasons}
@@ -78,7 +99,7 @@ def input_guardrail_node(state: dict[str, Any]) -> dict[str, Any]:
         "jira_action": "none",
         "stage": "input_blocked" if decision["action"] == "block" else "input_review",
         "visible_response": (
-            "I can’t process that request automatically. It has been stopped for safe review."
+            "I cannot provide or perform that request. It has been stopped for safe review."
         ),
     })
     return result

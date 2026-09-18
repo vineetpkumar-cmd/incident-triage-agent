@@ -6,3 +6,6 @@ __pycache__/
 .DS_Store
 .worktrees/
 .superpowers/
+red_team/results/*.json
+red_team/results/*.csv
+red_team/results/screenshots/
