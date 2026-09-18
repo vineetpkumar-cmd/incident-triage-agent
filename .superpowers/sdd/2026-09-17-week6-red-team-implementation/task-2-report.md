@@ -79,3 +79,27 @@ LANGSMITH_TRACING=false /Users/testuser/incident-triage-agent/.venv/bin/python -
 Result: `77 passed in 0.58s`.
 
 Fix commit: `94ed9ae1f4f75faebf6cc14125cdf5a220b56977` (`fix: harden Week 6 red-team case fixtures`).
+
+## Re-review Fix Round
+
+Aligned legitimate-control policies with actual workflow paths: P3 controls permit draft/send, P1/P2 controls permit drafting while prohibiting unsafe sends, and the approved P2 Jira control permits comment updates while prohibiting creation because its complete fixture is already linked. Added complete Jira fields and exact per-case leak-policy tests, including tool-abuse and crescendo disclosures and explicit empty-list preservation.
+
+Focused red result: `2 failed, 9 passed` before implementation.
+
+Focused green command:
+
+```text
+LANGSMITH_TRACING=false /Users/testuser/incident-triage-agent/.venv/bin/python -m pytest -p no:cacheprovider tests/test_red_team_cases.py -q
+```
+
+Result: `11 passed in 0.37s`.
+
+Full suite command (run once after fixes):
+
+```text
+LANGSMITH_TRACING=false /Users/testuser/incident-triage-agent/.venv/bin/python -m pytest -p no:cacheprovider
+```
+
+Result: `79 passed in 0.56s`.
+
+Re-review fix commit: recorded with the report update.
