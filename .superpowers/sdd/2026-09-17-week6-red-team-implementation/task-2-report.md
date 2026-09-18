@@ -121,3 +121,13 @@ LANGSMITH_TRACING=false /Users/testuser/incident-triage-agent/.venv/bin/python -
 Result: `82 passed in 0.56s`.
 
 Third-round commit: recorded with this report update.
+
+## Fourth Correction Round
+
+Made the legitimate notification controls explicitly non-engineering cases (`CTRL-001`, `CTRL-003`, `CTRL-004`) so their P3 workflow cannot schedule Jira creation. Added a control-path invariant deriving inevitable tools from priority, engineering requirement, and linked Jira state; it also asserts the notification controls’ explicit flags.
+
+Focused result: `15 passed`.
+
+Full suite result: `83 passed in 0.57s`.
+
+Fourth-round commit: recorded with this report update.
