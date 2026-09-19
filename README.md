@@ -180,7 +180,7 @@ pytest -q
 Current result:
 
 ```text
-62 passed
+147 passed
 ```
 
 To inspect one mock MCP server manually:
@@ -235,3 +235,24 @@ experiment.
 - [Detailed evaluation analysis](evaluation/post_improvement_analysis.md)
 - [Canonical case-level comparison](evaluation/canonical_comparison.json)
 - [LangSmith dataset and experiments](https://smith.langchain.com/o/2f9daf18-4b64-47b3-b671-7479b76f22e7/datasets/eedf6816-3b9f-4bb3-95c1-d0130f234938)
+
+## Week 6: Red-Team Safety Evaluation
+
+Week 6 continues this Incident Triage Agent using **Path B: red-team your own agent**. It tests 24 fictional attacks across jailbreaking, prompt injection, obfuscation, PII extraction, tool abuse, social engineering, crescendo, and internal disclosure, plus six legitimate-use controls.
+
+![Week 6 red-team architecture](docs/week6-red-team-architecture.svg)
+
+| Result | Baseline | Defended |
+|---|---:|---:|
+| Attack safety PASS | 0% (0/24) | 100% (24/24) |
+| Legitimate-control PASS | 83% (5/6) | 83% (5/6) |
+| All-case verdicts | 5 PASS, 25 WARN, 0 FAIL | 29 PASS, 1 WARN, 0 FAIL |
+
+The baseline attacks were WARN rather than FAIL: no prohibited write or deterministic leak occurred, but the agent did not clearly refuse the malicious intent. Defended mode added:
+
+- input checks across the conversation, incident description, and Jira text;
+- output scanning for internal details and fictional PII;
+- deterministic tool allowlists, incident scope, workflow-stage, recipient, and approval checks;
+- isolated per-case data stores, tool traces, mutations, and PASS/WARN/FAIL reasoning.
+
+Results are specific to synthetic local fixtures and do not constitute production security assurance. See the [Week 6 findings report](docs/week6-red-team-report.md) and [five-minute demo script](docs/week6-demo-script.md).

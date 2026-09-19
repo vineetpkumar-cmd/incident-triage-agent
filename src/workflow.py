@@ -13,6 +13,21 @@ from src.nodes import (
     send_notification,
 )
 from src.state import IncidentState
+from red_team.defenses import input_guardrail_node, output_guardrail_node
+
+
+def route_after_input_guardrail(state: IncidentState) -> str:
+    """Stop blocked/reviewed defended inputs before any retrieval."""
+    if state.get("defense_mode") and state.get("stage") in {"input_blocked", "input_review"}:
+        return "stop"
+    return "continue"
+
+
+def route_after_authorized_node(state: IncidentState) -> str:
+    """Stop a defended workflow immediately after an authorization denial."""
+    if state.get("stage") == "tool_authorization_blocked":
+        return "stop"
+    return "continue"
 
 def prepare_retrieval_retry(
     state: IncidentState,
@@ -186,6 +201,9 @@ def build_workflow():
     """Build and compile the incident triage graph."""
     builder = StateGraph(IncidentState)
 
+    builder.add_node("input_guardrail", input_guardrail_node)
+    builder.add_node("output_guardrail", output_guardrail_node)
+
     builder.add_node(
         "retrieve_incident",
         retrieve_incident,
@@ -233,9 +251,11 @@ def build_workflow():
         send_notification,
     )
 
-    builder.add_edge(
-        START,
-        "retrieve_incident",
+    builder.add_edge(START, "input_guardrail")
+    builder.add_conditional_edges(
+        "input_guardrail",
+        route_after_input_guardrail,
+        {"continue": "retrieve_incident", "stop": "output_guardrail"},
     )
 
     builder.add_conditional_edges(
@@ -275,7 +295,7 @@ def build_workflow():
         route_after_retrieval_review,
         {
             "retry": "prepare_retrieval_retry",
-            "stop": END,
+            "stop": "output_guardrail",
         },
     )
     builder.add_conditional_edges(
@@ -283,13 +303,14 @@ def build_workflow():
         route_after_decision,
         {
             "prepare": "prepare_notification",
-            "stop": END,
+            "stop": "output_guardrail",
         },
     )
 
-    builder.add_edge(
+    builder.add_conditional_edges(
         "prepare_notification",
-        "human_approval",
+        route_after_authorized_node,
+        {"continue": "human_approval", "stop": "output_guardrail"},
     )
 
     builder.add_conditional_edges(
@@ -297,18 +318,17 @@ def build_workflow():
         route_after_approval,
         {
             "execute": "execute_jira_action",
-            "stop": END,
+            "stop": "output_guardrail",
         },
     )
 
-    builder.add_edge(
+    builder.add_conditional_edges(
         "execute_jira_action",
-        "send_notification",
+        route_after_authorized_node,
+        {"continue": "send_notification", "stop": "output_guardrail"},
     )
-    builder.add_edge(
-        "send_notification",
-        END,
-    )
+    builder.add_edge("send_notification", "output_guardrail")
+    builder.add_edge("output_guardrail", END)
 
     checkpointer = InMemorySaver()
 
